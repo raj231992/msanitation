@@ -2,23 +2,8 @@
 header("Content-type: application/json");
 session_start();
 
-//Global Variables
-$TOILET_ID_LEN=4;
-$PROVIDER_ID_LEN=4;
-$PROVIDER_PIN_LEN=4;
-$TICKET_ID_LEN=8;
-$URL='http://sanitationimpact.org';
-$USER_PASS='root:root123';
-
-//local variables
-$rand_num=0;
-$temp_provider="provider";
-$temp_user="user";
-$user_text="";
-$provider_text="";
-
-
 // to get json data from a url
+
 function curl_get($url,$user_cred)
 {
     $ch = curl_init();
@@ -46,24 +31,44 @@ function curl_post($url,$post_parameters,$user_cred)
 	return $output;
 }
 
+//Global Variables
+$TOILET_ID_LEN = 4;  // number of digits for toilet id
+$PROVIDER_ID_LEN = 4; // number of digits for provider id
+$PROVIDER_PIN_LEN = 4; // number of digits for provider pin
+$TICKET_ID_LEN = 8; // number of digits for ticket id
+$URL = 'http://sanitationimpact.org'; // url for api
+$USER_PASS = 'root:root123'; // username and password
 
+//local variables
+$rand_num=0;
+$temp_provider="provider";
+$temp_user="user";
+$user_text="";
+$provider_text="";
+
+
+// contains all the kookoo functions
 require_once("response.php");
 $r = new Response();
 $r->setFiller("yes");
 
-$ufp= fopen($temp_user, 'a+'); 
-$pfp= fopen($temp_provider, 'a+');
+// temp file to store data
+$ufp = fopen($temp_user, 'a+'); 
+$pfp = fopen($temp_provider, 'a+');
  
+
+// new call is initaited
 if($_REQUEST['event']== "NewCall" ) 
 {
 	
-	$_SESSION['caller_number']=$_REQUEST['cid'];
-	$_SESSION['kookoo_number']=$_REQUEST['called_number']; 
-	$_SESSION['session_id']   = $_REQUEST['sid'];
-    $_SESSION['next_goto']='Welcome';
-    $user_text=$_REQUEST['cid'];
+	$_SESSION['caller_number'] = $_REQUEST['cid']; // stores reporters phone number
+	$_SESSION['kookoo_number'] = $_REQUEST['called_number']; // stores the kookoo number to which user called
+	$_SESSION['session_id'] = $_REQUEST['sid']; // stores the session id
+    $user_text = $_REQUEST['cid']; // stores reporter's phone number in user_text
+    $_SESSION['next_goto']='Welcome'; // changes event to welcome
 } 
 
+// when call is disconnected
 if ($_REQUEST['event']=="Disconnect" || $_REQUEST['event']=="Hangup" )
 {
  	$fp=fopen($temp_user,'r');
@@ -112,6 +117,11 @@ if ($_REQUEST['event']=="Disconnect" || $_REQUEST['event']=="Hangup" )
 	$ufp= fopen($temp_user, 'w');
 	$pfp= fopen($temp_provider, 'w');
 } 
+
+
+
+// user receives welcome message and needs to press 1 to report a problem,
+// 2 for provider and 3 for manager
 if($_SESSION['next_goto']=='Welcome')
 {
  	$collectInput = New CollectDtmf();
@@ -123,6 +133,8 @@ if($_SESSION['next_goto']=='Welcome')
 	$r->addCollectDtmf($collectInput);
     $_SESSION['next_goto']='GetDetails';
 }
+
+// user has to enter toilet number or provider has to enter provider id
 else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto']=='GetDetails'){
  	if($_REQUEST['data']=='1')
  	{
@@ -156,6 +168,7 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto']=='GetDetails')
  	
 }
 
+// user gets problem category
 else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'GetProblem' )
 {
 	if($_REQUEST['data']=='' || strpos($_REQUEST['data'], '#')!==false || strpos($_REQUEST['data'], '*') !==false )
@@ -194,6 +207,8 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'GetProblem
 		
 	}
 }
+
+// user gets problem list
 else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'Details' )
 {
 	if($_REQUEST['data']==''||$_REQUEST['data']=='#'||$_REQUEST['data']=='*')
@@ -264,6 +279,8 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'Details' )
 
 	}
 }
+
+// user is asked to report another problem or exit
 else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'Finished' )
 {
 	if($_REQUEST['data']==''||$_REQUEST['data']=='#'||$_REQUEST['data']=='*')
@@ -288,6 +305,8 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'Finished' 
 	    $_SESSION['next_goto']='Quit';
 	}
 }
+
+// user reports another problem or exits
 else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'Quit' )
 {
 	if($_REQUEST['data']=='1')
@@ -316,6 +335,8 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'Quit' )
 	    $_SESSION['next_goto']='Quit';
 	}
 }
+
+// get and verify provider pin
 else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto']=='GetProviderPass'){
 	if(strlen($_REQUEST['data'])==$PROVIDER_ID_LEN && strpos($_REQUEST['data'], '#')==false && strpos($_REQUEST['data'], '*') ==false)
 	{
@@ -354,6 +375,8 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto']=='GetProviderP
 	    $_SESSION['next_goto']='GetProviderPass';
  	}
 }
+
+//get and verify ticket from provider
 else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto']=='GetTicket'){
 	if(strlen($_REQUEST['data'])==$PROVIDER_PIN_LEN && strpos($_REQUEST['data'], '#')==false && strpos($_REQUEST['data'], '*') ==false)
 	{
@@ -400,6 +423,8 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto']=='GetTicket'){
 	    $_SESSION['next_goto']='GetTicket';
  	}
 }
+
+//check for provider fix
 else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto']=='CheckFix')
 {
 	if($_REQUEST['data']=='' || strpos($_REQUEST['data'], '#')!==false || strpos($_REQUEST['data'], '*') !==false )
@@ -446,6 +471,7 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto']=='CheckFix')
  	}
 }
 
+//report provider fix
 else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'ReportFix' )
 {
 	if($_REQUEST['data']=='1')
@@ -508,6 +534,27 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'ReportReco
 {
 	if($_REQUEST['data']=='1')
 	{
+		$tempfp=fopen('provider','r');
+ 		$provider_id=fgets($tempfp);
+ 		while($provider_id==0)
+ 		{
+ 			$provider_id=fgets($tempfp);
+ 		}
+ 		$provider_id = trim(preg_replace('/\s\s+/', ' ', $provider_id));
+ 		$provider_pin=fgets($tempfp);
+ 		while($provider_pin==0)
+ 		{
+ 			$provider_pin=fgets($tempfp);
+ 		}
+ 		$provider_pin = trim(preg_replace('/\s\s+/', ' ', $provider_pin));
+ 		$ticket_id=fgets($tempfp);
+ 		while($ticket_id==0)
+ 		{
+ 			$ticket_id=fgets($tempfp);
+ 		}
+ 		$ticket_id = trim(preg_replace('/\s\s+/', ' ', $ticket_id));
+ 		fclose($tempfp);
+ 		curl_post($URL.'/reporting/api/download_audio/','ticket_id='.$ticket_id.'&audio_file_url='.$_REQUEST['data'],$USER_PASS);
 		
 		$r->addPlayText('Thank you for callling Mobile Sanitation',4);
 		$r->addHangup();
