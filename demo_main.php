@@ -106,7 +106,7 @@ if ($_REQUEST['event']=="Disconnect" || $_REQUEST['event']=="Hangup" )
 	$min=min($pc_len,$p_len);
 	for($i=0;$i<$min;$i++)
 	{
-	    curl_post('http://sanitationimpact.org/reporting/report_problem/','phone_number='.$phone_number.'&toilet_id='.$toilet_id.'&category_index='.$prob_cat[$i].'&problem_index='.$prob[$i],$USER_PASS);
+	    curl_post($URL.'/reporting/api/report_problem/','phone_number='.$phone_number.'&toilet_id='.$toilet_id.'&category_index='.$prob_cat[$i].'&problem_index='.$prob[$i],$USER_PASS);
 	}
 
 	$ufp= fopen($temp_user, 'w');
@@ -170,7 +170,7 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'GetProblem
 	}
 	else
 	{
-		$json_data=json_decode(curl_post($URL.'/reporting/is_valid_toilet/','toilet_id='.$_REQUEST['data'],$USER_PASS),true);
+		$json_data=json_decode(curl_post($URL.'/reporting/api/is_valid_toilet/','toilet_id='.$_REQUEST['data'],$USER_PASS),true);
 		if($json_data[success])
 		{
 		    $user_text=$_REQUEST['data'];
@@ -319,7 +319,7 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'Quit' )
 else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto']=='GetProviderPass'){
 	if(strlen($_REQUEST['data'])==$PROVIDER_ID_LEN && strpos($_REQUEST['data'], '#')==false && strpos($_REQUEST['data'], '*') ==false)
 	{
- 		$json_data=json_decode(curl_post($URL.'/provider/is_valid_provider/','provider_id='.$_REQUEST['data'],$USER_PASS),true);
+ 		$json_data=json_decode(curl_post($URL.'/provider/api/is_valid_provider/','provider_id='.$_REQUEST['data'],$USER_PASS),true);
 		if($json_data[success])
 		{
 		    $provider_text=$_REQUEST['data'];
@@ -365,7 +365,7 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto']=='GetTicket'){
  		}
  		fclose($tempfp);
  		$provider_id = trim(preg_replace('/\s\s+/', ' ', $provider_id));
- 		$json_data=json_decode(curl_post($URL.'/provider/is_valid_provider_pin_code/','provider_id='.$provider_id.'&pin_code='.$_REQUEST['data'],$USER_PASS),true);
+ 		$json_data=json_decode(curl_post($URL.'/provider/api/is_valid_provider_pin_code/','provider_id='.$provider_id.'&pin_code='.$_REQUEST['data'],$USER_PASS),true);
 		if($json_data[success])
 		{
 		    $provider_text=$_REQUEST['data'];
@@ -422,7 +422,7 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto']=='CheckFix')
  		}
  		$provider_id = trim(preg_replace('/\s\s+/', ' ', $provider_id));
  		fclose($tempfp);
- 		$json_data=json_decode(curl_post($URL.'/reporting/is_valid_provider_ticket/','provider_id='.$provider_id.'&ticket_id='.$_REQUEST['data'],$USER_PASS),true);
+ 		$json_data=json_decode(curl_post($URL.'/reporting/api/is_valid_provider_ticket/','provider_id='.$provider_id.'&ticket_id='.$_REQUEST['data'],$USER_PASS),true);
  		if($json_data[success])
 		{
 	 		$provider_text=$_REQUEST['data'];
@@ -471,7 +471,7 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'ReportFix'
  		}
  		$ticket_id = trim(preg_replace('/\s\s+/', ' ', $ticket_id));
  		fclose($tempfp);
- 		curl_post($URL.'/reporting/report_fix/','provider_id='.$provider_id.'&pin_code='.$provider_pin.'&ticket_id='.$ticket_id.'&validity_checked=True',$USER_PASS);
+ 		curl_post($URL.'/reporting/api/report_fix/','provider_id='.$provider_id.'&pin_code='.$provider_pin.'&ticket_id='.$ticket_id.'&validity_checked=True',$USER_PASS);
 		$r->addPlayText('Thank you for callling Mobile Sanitation',4);
 		$r->addHangup();
 	}
