@@ -524,18 +524,7 @@ else if($_REQUEST['event'] == 'Record' && $_SESSION['next_goto'] == 'Record_Stat
 	 $r->addPlayText('your recorded audio is ');
 	 $_SESSION['record_url']=$_REQUEST['data'];
 	 $r->addPlayAudio($_SESSION['record_url']);
-	 $collectInput = New CollectDtmf();
-	 $collectInput->addPlayText('Press 1 to send recording. Press 2 to record again',4);
-	 $collectInput->setMaxDigits('1'); 
-	 $collectInput->setTimeOut('4000');  
-	 $r->addCollectDtmf($collectInput);
-     $_SESSION['next_goto']='ReportRecording';	
-}
-else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'ReportRecording' )
-{
-	if($_REQUEST['data']=='1')
-	{
-		$tempfp=fopen('provider','r');
+	 $tempfp=fopen('provider','r');
  		$provider_id=fgets($tempfp);
  		while($provider_id==0)
  		{
@@ -555,7 +544,19 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'ReportReco
  		}
  		$ticket_id = trim(preg_replace('/\s\s+/', ' ', $ticket_id));
  		fclose($tempfp);
- 		curl_post($URL.'/reporting/api/download_audio/','ticket_id='.$ticket_id.'&audio_file_url='.$_REQUEST['data'],$USER_PASS);
+ 		curl_post($URL.'/reporting/api/download_audio/','ticket_id='.$ticket_id.'&audio_file_url='.$_SESSION['record_url'],$USER_PASS);
+	 $collectInput = New CollectDtmf();
+	 $collectInput->addPlayText('Press 1 to send recording. Press 2 to record again',4);
+	 $collectInput->setMaxDigits('1'); 
+	 $collectInput->setTimeOut('4000');  
+	 $r->addCollectDtmf($collectInput);
+     $_SESSION['next_goto']='ReportRecording';	
+}
+else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'ReportRecording' )
+{
+	if($_REQUEST['data']=='1')
+	{
+		
 		
 		$r->addPlayText('Thank you for callling Mobile Sanitation',4);
 		$r->addHangup();
