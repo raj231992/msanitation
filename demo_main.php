@@ -55,7 +55,7 @@ $r->setFiller("yes");
 // temp file to store data
 $ufp = fopen($temp_user, 'a+'); 
 $pfp = fopen($temp_provider, 'a+');
- 
+$tempfile = fopen('tempfile', 'a+'); 
 
 // new call is initaited
 if($_REQUEST['event']== "NewCall" ) 
@@ -522,7 +522,8 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'ReportFix'
 else if($_REQUEST['event'] == 'Record' && $_SESSION['next_goto'] == 'Record_Status' )
 {
 	 $r->addPlayText('your recorded audio is ');
-	 $_SESSION['record_url']=$_REQUEST['data'];
+     $_SESSION['record_url']=$_REQUEST['data'];
+     fwrite($tempfile,$_SESSION['record_url']);
 	 $r->addPlayAudio($_SESSION['record_url']);
 	 $tempfp=fopen('provider','r');
  		$provider_id=fgets($tempfp);
@@ -544,7 +545,10 @@ else if($_REQUEST['event'] == 'Record' && $_SESSION['next_goto'] == 'Record_Stat
  		}
  		$ticket_id = trim(preg_replace('/\s\s+/', ' ', $ticket_id));
  		fclose($tempfp);
- 		curl_post($URL.'/reporting/api/download_audio/','ticket_id='.$ticket_id.'&audio_file_url='.$_SESSION['record_url'],$USER_PASS);
+        $link='ticket_id='.$ticket_id.'&audio_file_url='.$_SESSION['record_url'];
+        fwrite($tempfile,$link);
+     $json=json_decode(curl_post($URL.'/reporting/api/download_audio/',$link,$USER_PASS),true);
+     file_put_contents('temp',print_r($json,true));
 	 $collectInput = New CollectDtmf();
 	 $collectInput->addPlayText('Press 1 to send recording. Press 2 to record again',4);
 	 $collectInput->setMaxDigits('1'); 
