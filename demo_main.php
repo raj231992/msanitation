@@ -54,8 +54,7 @@ $r->setFiller("yes");
 
 // temp file to store data
 $ufp = fopen($temp_user, 'a+'); 
-$pfp = fopen($temp_provider, 'a+');
-$tempfile = fopen('tempfile', 'a+'); 
+$pfp = fopen($temp_provider, 'a+'); 
 
 // new call is initaited
 if($_REQUEST['event']== "NewCall" ) 
@@ -523,6 +522,7 @@ else if($_REQUEST['event'] == 'Record' && $_SESSION['next_goto'] == 'Record_Stat
 {
 	 $r->addPlayText('your recorded audio is ');
      $_SESSION['record_url']=$_REQUEST['data'];
+     $tempfile = fopen('tempfile','w');
      fwrite($tempfile,$_SESSION['record_url']);
 	 $r->addPlayAudio($_SESSION['record_url']);
 	 $collectInput = New CollectDtmf();
@@ -558,12 +558,8 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'ReportReco
  		$ticket_id = trim(preg_replace('/\s\s+/', ' ', $ticket_id));
  		fclose($tempfp);
  		$temp=fopen('tempfile', 'r');
-        $link='ticket_id='.$ticket_id.'&audio_file_url='.fgets($temp);
+        curl_post($URL.'/reporting/api/download_audio/','ticket_id='.$ticket_id.'&audio_file_url='.fgets($temp),$USER_PASS);
         fclose($temp);
-        $temp=fopen('tempfile', 'w');
-        fwrite($temp,$link);
-     	$json=json_decode(curl_post($URL.'/reporting/api/download_audio/',$link,$USER_PASS),true);
-     	file_put_contents('temp',print_r($json,true));
 		$r->addPlayText('Thank you for callling Mobile Sanitation',4);
 		$r->addHangup();
 	}
@@ -571,7 +567,7 @@ else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'ReportReco
 	{
 		$_SESSION['next_goto'] = 'Record_Status';
 		$r->addPlayText('Please record your message after the beep.    Press hash to stop recording ');
-		$r->addRecord('recording'+(string)$rand_num,'wav','300');
+        $r->addRecord('recording'+(string)$rand_num,'wav','300');
 	}
 	else
 	{
