@@ -525,7 +525,19 @@ else if($_REQUEST['event'] == 'Record' && $_SESSION['next_goto'] == 'Record_Stat
      $_SESSION['record_url']=$_REQUEST['data'];
      fwrite($tempfile,$_SESSION['record_url']);
 	 $r->addPlayAudio($_SESSION['record_url']);
-	 $tempfp=fopen('provider','r');
+	 $collectInput = New CollectDtmf();
+	 $collectInput->addPlayText('Press 1 to send recording. Press 2 to record again',4);
+	 $collectInput->setMaxDigits('1'); 
+	 $collectInput->setTimeOut('4000');  
+	 $r->addCollectDtmf($collectInput);
+     $_SESSION['next_goto']='ReportRecording';	
+}
+else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'ReportRecording' )
+{
+	if($_REQUEST['data']=='1')
+	{
+		
+		$tempfp=fopen('provider','r');
  		$provider_id=fgets($tempfp);
  		while($provider_id==0)
  		{
@@ -545,23 +557,13 @@ else if($_REQUEST['event'] == 'Record' && $_SESSION['next_goto'] == 'Record_Stat
  		}
  		$ticket_id = trim(preg_replace('/\s\s+/', ' ', $ticket_id));
  		fclose($tempfp);
-        $link='ticket_id='.$ticket_id.'&audio_file_url='.$_SESSION['record_url'];
-        fwrite($tempfile,$link);
-     $json=json_decode(curl_post($URL.'/reporting/api/download_audio/',$link,$USER_PASS),true);
-     file_put_contents('temp',print_r($json,true));
-	 $collectInput = New CollectDtmf();
-	 $collectInput->addPlayText('Press 1 to send recording. Press 2 to record again',4);
-	 $collectInput->setMaxDigits('1'); 
-	 $collectInput->setTimeOut('4000');  
-	 $r->addCollectDtmf($collectInput);
-     $_SESSION['next_goto']='ReportRecording';	
-}
-else if($_REQUEST['event'] == 'GotDTMF' && $_SESSION['next_goto'] == 'ReportRecording' )
-{
-	if($_REQUEST['data']=='1')
-	{
-		
-		
+ 		$temp=fopen('tempfile', 'r');
+        $link='ticket_id='.$ticket_id.'&audio_file_url='.fgets($temp);
+        fclose($temp);
+        $temp=fopen('tempfile', 'w');
+        fwrite($temp,$link);
+     	$json=json_decode(curl_post($URL.'/reporting/api/download_audio/',$link,$USER_PASS),true);
+     	file_put_contents('temp',print_r($json,true));
 		$r->addPlayText('Thank you for callling Mobile Sanitation',4);
 		$r->addHangup();
 	}
